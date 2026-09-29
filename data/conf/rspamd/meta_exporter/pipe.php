@@ -87,9 +87,13 @@ catch (RedisException $e) {
 }
 
 $rcpt_final_mailboxes = array();
+// Envelope recipient(s) as received, keyed by the final mailbox they resolved to
+$rcpt_orig_map = array();
 
 // Loop through all rcpts
 foreach ($rcpts as $rcpt) {
+  // Keep the address as received (alias, catch-all, tagged) before it is resolved
+  $rcpt_received = strtolower($rcpt);
   // Remove tag
   $rcpt = preg_replace('/^(.*?)\+.*(@.*)$/', '$1$2', $rcpt);
 
@@ -163,6 +167,9 @@ foreach ($rcpts as $rcpt) {
           if (!in_array($username, $rcpt_final_mailboxes)) {
             $rcpt_final_mailboxes[] = $username;
           }
+          if (!in_array($rcpt_received, $rcpt_orig_map[$username] ?? array())) {
+            $rcpt_orig_map[$username][] = $rcpt_received;
+          }
         }
         else {
           $parsed_goto = parse_email($goto);
@@ -215,15 +222,24 @@ foreach ($rcpts as $rcpt) {
 
 foreach ($rcpt_final_mailboxes as $rcpt_final) {
   error_log("QUARANTINE: quarantine pipe: processing quarantine message for rcpt " . $rcpt_final . PHP_EOL);
+  // Only record the original recipient(s) when they differ from the mailbox itself
+  $rcpt_orig = $rcpt_orig_map[$rcpt_final] ?? array();
+  if ($rcpt_orig == array(strtolower($rcpt_final))) {
+    $rcpt_orig = null;
+  }
+  else {
+    $rcpt_orig = mb_substr(implode(', ', $rcpt_orig), 0, 1024) ?: null;
+  }
   try {
-    $stmt = $pdo->prepare("INSERT INTO `quarantine` (`qid`, `subject`, `score`, `sender`, `rcpt`, `symbols`, `user`, `ip`, `msg`, `action`, `fuzzy_hashes`)
-      VALUES (:qid, :subject, :score, :sender, :rcpt, :symbols, :user, :ip, :msg, :action, :fuzzy_hashes)");
+    $stmt = $pdo->prepare("INSERT INTO `quarantine` (`qid`, `subject`, `score`, `sender`, `rcpt`, `rcpt_orig`, `symbols`, `user`, `ip`, `msg`, `action`, `fuzzy_hashes`)
+      VALUES (:qid, :subject, :score, :sender, :rcpt, :rcpt_orig, :symbols, :user, :ip, :msg, :action, :fuzzy_hashes)");
     $stmt->execute(array(
       ':qid' => $qid,
       ':subject' => $subject,
       ':score' => $score,
       ':sender' => $sender,
       ':rcpt' => $rcpt_final,
+      ':rcpt_orig' => $rcpt_orig,
       ':symbols' => $symbols,
       ':user' => $user,
       ':ip' => $ip,

@@ -45,7 +45,7 @@
     <tr><th>Subject</th><th>Sender</th><th class="mob">Score</th><th class="mob">Action</th><th class="mob">Arrived on</th>{% if quarantine_acl == 1 %}<th>Actions</th>{% endif %}</tr>
     {% for line in meta|reverse %}
     <tr>
-    <td>{{ line.subject|e }}</td>
+    <td>{{ line.subject|e }}{% if line.rcpt_orig %}<br><small>Sent to: {{ line.rcpt_orig|e }}</small>{% endif %}</td>
     <td>{{ line.sender|e }}</td>
     <td class="mob">{{ line.score }}</td>
     {% if line.action == "reject" %}

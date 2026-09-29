@@ -4,7 +4,7 @@ function init_db_schema()
   try {
     global $pdo;
 
-    $db_version = "18082026_1200";
+    $db_version = "29092026_1200";
 
     $stmt = $pdo->query("SHOW TABLES LIKE 'versions'");
     $num_results = count($stmt->fetchAll(PDO::FETCH_ASSOC));
@@ -343,6 +343,7 @@ function init_db_schema()
           "fuzzy_hashes" => "JSON",
           "sender" => "VARCHAR(255) NOT NULL DEFAULT 'unknown'",
           "rcpt" => "VARCHAR(255)",
+          "rcpt_orig" => "VARCHAR(1024)",
           "msg" => "LONGTEXT",
           "domain" => "VARCHAR(255)",
           "notified" => "TINYINT(1) NOT NULL DEFAULT '0'",

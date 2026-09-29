@@ -79,7 +79,7 @@ try:
 
   def notify_rcpt(rcpt, msg_count, quarantine_acl, category):
     if category == "add_header": category = "add header"
-    meta_query = query_mysql('SELECT `qhash`, id, subject, score, sender, created, action FROM quarantine WHERE notified = 0 AND rcpt = %s AND score < %s AND (action = %s OR "all" = %s)', (rcpt, max_score, category, category))
+    meta_query = query_mysql('SELECT `qhash`, id, subject, score, sender, rcpt_orig, created, action FROM quarantine WHERE notified = 0 AND rcpt = %s AND score < %s AND (action = %s OR "all" = %s)', (rcpt, max_score, category, category))
     print("%s: %d of %d messages qualify for notification" % (rcpt, len(meta_query), msg_count))
     if len(meta_query) == 0:
       return
